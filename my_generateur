@@ -1,0 +1,45 @@
+#!/usr/bin/python3.6
+import os
+import re
+import sys
+import glob
+import pwd
+import time
+import getpass
+
+def my_h():
+    i = 0
+    b = 0
+    compte_dir = 0
+    tab4 = []
+    tab5 = []
+    if len(sys.argv) == 2:
+        for dossier, sous_dossiers, fichiers in os.walk(sys.argv[1]):
+            for fichier in fichiers:
+                tab4.append(os.path.join(dossier, fichier))
+    else:
+        print("chemin du dossier svp")
+        exit()
+
+    for path in tab4:
+        if path.endswith(".c"):
+            tab5.append(path)
+
+    mon_head = open("my.h", "w")
+    mon_head.write("#ifndef MY_H_\n# define MY_H_\n\n")
+
+    while compte_dir <= len (tab5) - 1:
+        mon_fichier = open(tab5[compte_dir], "r")
+        contenu = mon_fichier.read()
+        coucou = re.findall('\w+\s+\w+\s*\([\w\s\n,\*\[\]]*\)+\s+\{', contenu, re.MULTILINE)
+        for match in coucou:
+            if (match.startswith("else") != True):
+                mon_head.write(match[:-2] + ";\n")
+        mon_fichier.close()
+        compte_dir = compte_dir + 1
+
+    mon_head.write("\n#endif /* !MY_H_ */")
+    mon_head.close()
+    print ('OK')
+
+my_h()
