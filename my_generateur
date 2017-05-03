@@ -34,7 +34,7 @@ def my_h():
         coucou = re.findall('\w+\s+\w+\s*\([\w\s\n,\*\[\]]*\)+\s+\{', contenu, re.MULTILINE)
         for match in coucou:
             if (match.startswith("else") != True):
-                mon_head.write(match[:-2] + ";\n")
+                mon_head.write("\n"+match[:-2] + ";\n")
         mon_fichier.close()
         compte_dir = compte_dir + 1
 

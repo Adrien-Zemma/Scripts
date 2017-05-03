@@ -1,0 +1,50 @@
+#!/usr/bin/python3.6
+import os
+import re
+import sys
+import glob
+import pwd
+import time
+import getpass
+
+def maker():
+    if len(sys.argv) != 2:
+        print("maker [NOM DU BINAIRE]")
+        exit
+    path_file = []
+    for dossier, sous_dossiers, fichiers in os.walk("."):
+        for fichier in fichiers:
+            if fichier.endswith(".c"):
+                path_file.append(os.path.join(dossier, fichier))
+    makefile = open("Makefile", "w")
+    makefile.write("NAME\t= " + sys.argv[1] + "\n\nCC\t= gcc\n\nRM\t= rm -rf\n")
+    makefile.write("\nTODO\t= -@fgrep --color --exclude=.git --exclude=*.o")
+    makefile.write(" --exclude=Makefile --exclude=tags --exclude=cscope*")
+    makefile.write("-H -e TODO -e FIXME -r $(CURDIR) || true\n\n")
+    makefile.write("SRCS = ")
+    for i in path_file:
+        if i.startswith('./src'):
+            makefile.write('\t'+ i[2:] + "\t\\\n")
+    makefile.write("\n\nLIBS = ")
+    for i in path_file:
+        if i.startswith('./lib'):
+            makefile.write('\t'+ i[2:] + "\t\\\n")
+    makefile.write("\nOBJS	= $(SRCS:.c=.o)\n\nOBJ_LIBS = $(LIBS:.c=.o\n\n")
+    makefile.write("CFLAGS = -I./include/\nCFLAGS += -W -Wall -Wextra")
+    makefile.write("\nLDLIBS = -Llib/my -lmy\n\nall: $(NAME)\n\n")
+    makefile.write("$(NAME): $(OBJS) $(LIBS)\n\t")
+    makefile.write("@ar rc lib/my/libmy.a $(LIBS)\n\t")
+    makefile.write("@$(CC) $(CFLAGS) -o $(NAME) $(OBJS) $(LDLIBS)\n\t@$(TODO)")
+    #color
+    makefile.write("\n\nclean:\n\t@#@echo \"clean OK\"\n\t")
+    makefile.write("@echo -e \"\e[1;46m clean OK \e[0m\"\n\t")
+    makefile.write("@$(RM) $(OBJS)\n\t@$(RM) $(LIBS)\n\t@$(RM) ./libmy.a")
+    #color
+    makefile.write("\n\fclean:\n\t@#@echo \"fclean OK\"\n\t")
+    makefile.write("@echo -e \"\e[1;46m fclean OK \e[0m\"\n\t")
+    makefile.write("@$(RM) $(OBJS)\n\t@$(RM) $(LIBS)\n\t@$(RM) $(NAME)\n\t@$(RM) ./libmy.a")
+    makefile.write("\n\nre: fclean all\n\n%.o: %.c\n\t@gcc -c -o $@ $(CFLAGS) $<\n\t")
+    makefile.write("@echo -e \"[\e[0;32m OK \e[0m] built '$@'\"")
+    makefile.write("\n\n.PHONY: all clean fclean re")
+    makefile.close()
+maker()
