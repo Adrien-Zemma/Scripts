@@ -32,11 +32,14 @@ class Make:
         self.phony = ".PHONY:\tre all clean fclean\n"
 
         if args.flags is not None:
-            self.FLAGS.append("-W -Wall -Werror -I./include/")
+            self.add_flag("-W -Wall -Werror -I./include/")
         else:
-            self.FLAGS.append(args.flags)
+            self.add_flag(args.flags)
 
     def add_flag(self, str):
+        for l in self.FLAGS:
+            if str in l:
+                return 1
         self.FLAGS.append(str)
 
     def add_srcs(self, str):
@@ -95,7 +98,7 @@ def get_old(Makefile):
                         Makefile.NAME = ligne.split("=")[1]
                 if ligne.startswith("CFLAGS") or ligne.startswith("CPPFLAGS"):
                     if ligne.split("=")[1].startswith("\t") or ligne.split("=")[1].startswith(" "):
-                        Makefile.FLAGS.append(ligne.split("=")[1][1:])
+                        Makefile.add_flag(ligne.split("=")[1][1:])
                     else:
                         Makefile.FLAGS.append(ligne.split("=")[1])
                 if ligne.startswith("LDLIBS"):
@@ -136,7 +139,7 @@ def write_in_file(Makefile):
             files.write("\n" + Makefile.all + "\n")
             files.write("\n" + Makefile.name + "\n")
             files.write(Makefile.re)
-            if Makefile.color:
+            if Makefile.color is False:
                 files.write("\n" + Makefile.clean_c + "\n")
                 files.write("\n" + Makefile.fclean_c + "\n")
                 files.write("\n" + Makefile.regle_c + "\n")
