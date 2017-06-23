@@ -6,19 +6,20 @@ import glob
 import pwd
 import time
 import getpass
+import argparse
 
 class Make:
-    def __init__(self):
-        self.NAME = "programme"
+    def __init__(self, args):
+        self.NAME = args.name
         self.CC = ""
         self.RM = "rm -f"
-        self.CURDIR = "./"
+        self.CURDIR = args.current_dir
         self.TODO = "TODO = -@fgrep --color --exclude=.git --exclude=*.o --exclude=Makefile --exclude=tags --exclude=cscope* -H -e TODO -e FIXME -r $(CURDIR) || true"
         self.SRCS = []
         self.OBJ = "$(SRCS:.c=.o)"
         self.FLAGS = []
         self.LDLIBS = ""
-        self.color = 1
+        self.color = args.color
         self.re = "re:\t fclean all\n"
         self.all = "all:\t$(NAME)"
         self.name = "$(NAME):\t$(OBJ)\n\t\t@$(CC) $(CFLAGS) -o $(NAME) $(OBJ) $(LDLIBS)\n\t\t@$(TODO)\n"
@@ -30,27 +31,39 @@ class Make:
         self.clean_c = "clean:\t\n\t\t@echo -e \"\\033[1;46m clean OK \\033[0m\"\n\t\t@$(RM) $(OBJ)"
         self.phony = ".PHONY:\tre all clean fclean\n"
 
-def parse_arg(Makefile):
-    compte = len(sys.argv)
-    if compte >= 2:
-        i = 1
-        while i < compte:
-            if (sys.argv[i][0] == "-"):
-                if sys.argv[i] == "-o" and i + 1 < compte:
-                    Makefile.NAME = sys.argv[i + 1]
-                elif sys.argv[i] == "-f" and i + 1 < compte:
-                    Makefile.CFLAGS = sys.argv[i + 1]
-                elif sys.argv[i] == "-t" and i + 1 < compte and sys.argv[i + 1] == "off":
-                    Makefile.TODO = ""
-                elif sys.argv[i] == "-c":
-                    Makefile.color = 0
-                elif sys.argv[i] == "-F" and i + 1 < compte:
-                    Makefile.CURDIR = sys.argv[i + 1]
-                elif sys.argv[i] == "-l" and i + 1 < compte:
-                    Makefile.LDLIBS = sys.argv[i + 1]
-                elif sys.argv[i] == "-i" and i + 1 < compte:
-                    Makefile.FLAGS.append("-I./" + sys.argv[i + 1])
-            i = i + 1
+        if args.flags is not None:
+            self.FLAGS.append("-W -Wall -Werror -I./include/")
+        else:
+            self.FLAGS.append(args.flags)
+
+    def add_flag(self, str):
+        self.FLAGS.append(str)
+
+    def add_srcs(self, str):
+        self.SRCS.append(str)
+
+
+def set_parse():
+    parser = argparse.ArgumentParser("Set args for Makefile-gen")
+    parser.add_argument("-o", "--name", type=str, default="programme",
+                        help="set the binary name")
+    parser.add_argument("-f", "--flags", type=str, default="-I./include/",
+                        help="set compil flag(s)")
+    parser.add_argument("-t", "--todo", action='store_false', default=False,
+                        help="disable todo option")
+    parser.add_argument("-c", "--color", action='store_false', default=False,
+                        help="disable colors for a pretty Makefile :/")
+    parser.add_argument("-C", "--current-dir", type=str, default="./",
+                        help="set dir to compile")
+    parser.add_argument("-l", "--lib", type=str, default="",
+                        help="set lib to compile")
+    args = parser.parse_args()
+    print(args)
+    return (args)
+
+def parse_arg():
+    args = set_parse()
+    Makefile = Make(args)
     return (Makefile)
 
 def get_file(Makefile):
@@ -64,8 +77,10 @@ def get_file(Makefile):
         elif Makefile.SRCS[1].endswith(".cpp"):
             Makefile.CC = "g++"
     else:
-        print("aucun fichier trouvé")
-        exit()
+        print("No files found")
+        sys.exit(1)
+    if Makefile.FLAGS is None:
+        sys.exit(84)
     return (Makefile)
 
 def get_old(Makefile):
@@ -131,12 +146,9 @@ def write_in_file(Makefile):
                 files.write("\n" + Makefile.regle + "\n")
             files.write(Makefile.phony)
 
-def main():
-    Makefile = Make()
+
+if __name__ == '__main__':
+    Makefile = parse_arg()
     Makefile = get_old(Makefile)
-    Makefile = parse_arg(Makefile)
     Makefile = get_file(Makefile)
     write_in_file(Makefile)
-
-
-main()
